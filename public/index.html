@@ -6,84 +6,326 @@
   <title>Lawyer Chatbot</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(270deg, #87ceeb, #b0e0e6, #a6dcef);
+      background-size: 600% 600%;
+      animation: bgMove 15s ease infinite;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      transition: background 0.5s ease;
     }
+
+    @keyframes bgMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
     #chatbox {
-      width: 400px;
-      height: 500px;
-      border: 1px solid #ccc;
-      border-radius: 10px;
+      width: 500px;
+      height: 640px;
+      border-radius: 22px;
       background: #fff;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.25);
+      animation: fadeIn 0.7s ease-in-out;
+      position: relative;
+      z-index: 10;
     }
+    #header {
+      background: linear-gradient(90deg, #007bff, #00c6ff);
+      color: #fff;
+      text-align: center;
+      padding: 18px;
+      font-weight: bold;
+      font-size: 20px;
+      letter-spacing: 0.5px;
+      position: relative;
+      overflow: hidden;
+    }
+    #header::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -150%;
+      width: 50%;
+      height: 100%;
+      background: rgba(255,255,255,0.3);
+      transform: skewX(-25deg);
+      animation: shimmer 6s infinite;
+    }
+    @keyframes shimmer {
+      0% { left: -150%; }
+      50% { left: 120%; }
+      100% { left: 120%; }
+    }
+
     #messages {
       flex: 1;
-      padding: 10px;
+      padding: 15px;
       overflow-y: auto;
+      background: #f4f9ff;
+      scroll-behavior: smooth;
+      position: relative;
     }
-    .message {
-      margin: 5px 0;
-      padding: 8px 12px;
-      border-radius: 8px;
-      max-width: 80%;
-    }
-    .user {
+    .new-msg-alert {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
       background: #007bff;
       color: #fff;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      display: none;
+      cursor: pointer;
+    }
+
+    .message-row {
+      display: flex;
+      align-items: flex-end;
+      margin: 10px 0;
+      gap: 8px;
+    }
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .bot-avatar { background: #007bff; }
+    .user-avatar { background: #28a745; }
+
+    .message {
+      padding: 10px 14px;
+      border-radius: 18px;
+      max-width: 70%;
+      word-wrap: break-word;
+      opacity: 0;
+      transform: translateY(12px);
+      animation: slideUp 0.4s forwards, glow 1s;
+      position: relative;
+    }
+    .user {
+      background: linear-gradient(135deg, #007bff, #00aaff);
+      color: #fff;
+      border-bottom-right-radius: 4px;
       margin-left: auto;
     }
     .bot {
       background: #e9ecef;
       color: #000;
+      border-bottom-left-radius: 4px;
       margin-right: auto;
     }
+    .timestamp {
+      font-size: 10px;
+      margin-top: 3px;
+      display: block;
+    }
+    .user .timestamp { color: #f0f0f0; } /* light grey on blue */
+    .bot .timestamp { color: #555; } /* dark grey on light */
+
     #input-area {
       display: flex;
       border-top: 1px solid #ccc;
+      background: #fafafa;
+      padding: 10px;
     }
     #input {
       flex: 1;
-      padding: 10px;
-      border: none;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 20px;
       outline: none;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+    #input:focus {
+      border-color: #007bff;
+      box-shadow: 0 0 6px rgba(0,123,255,0.4);
     }
     #send {
-      background: #007bff;
+      background: linear-gradient(135deg, #007bff, #00c6ff);
       color: #fff;
       border: none;
-      padding: 10px 15px;
+      border-radius: 50%;
+      width: 46px;
+      height: 46px;
+      margin-left: 10px;
       cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: pulse 2s infinite;
+    }
+    #send:active {
+      animation: clickVibrate 0.2s;
+    }
+
+    #footer {
+      text-align: center;
+      font-size: 12px;
+      color: #555;
+      padding: 6px;
+      border-top: 1px solid #eee;
+      background: #fdfdfd;
+    }
+
+    /* Dark mode */
+    body.dark {
+      background: #121212;
+    }
+    body.dark #chatbox {
+      background: #1f1f1f;
+      color: #eee;
+    }
+    body.dark #messages { background: #222; }
+    body.dark .bot { background: #333; color: #eee; }
+    body.dark .user { background: linear-gradient(135deg, #0d6efd, #0099ff); }
+    body.dark #footer { background: #111; color: #888; }
+
+    /* Toggle button */
+    #dark-toggle {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    /* Animations */
+    @keyframes slideUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(0,123,255,0.6); }
+      70% { box-shadow: 0 0 0 15px rgba(0,123,255,0); }
+      100% { box-shadow: 0 0 0 0 rgba(0,123,255,0); }
+    }
+    @keyframes glow {
+      0% { box-shadow: 0 0 8px rgba(0,123,255,0.4); }
+      100% { box-shadow: none; }
+    }
+    @keyframes clickVibrate {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-2px); }
+      50% { transform: translateX(2px); }
+      75% { transform: translateX(-2px); }
+      100% { transform: translateX(0); }
     }
   </style>
 </head>
 <body>
   <div id="chatbox">
+    <div id="header">⚖️ Lawyer AI Assistant</div>
+    <button id="dark-toggle">🌙</button>
     <div id="messages"></div>
+    <div class="new-msg-alert" id="newAlert">↓ New message</div>
     <div id="input-area">
       <input id="input" type="text" placeholder="Type your message..." />
-      <button id="send">Send</button>
+      <button id="send">➤</button>
     </div>
+    <div id="footer">© Lawyer Bot</div>
   </div>
 
   <script>
     const messagesDiv = document.getElementById('messages');
     const input = document.getElementById('input');
     const sendBtn = document.getElementById('send');
+    const toggleBtn = document.getElementById('dark-toggle');
+    const newAlert = document.getElementById('newAlert');
+
+    const sendSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-message-pop-alert-2354.mp3");
+    const receiveSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.wav");
 
     function appendMessage(text, sender) {
+      const row = document.createElement('div');
+      row.classList.add('message-row');
+
+      const avatar = document.createElement('div');
+      avatar.classList.add('avatar', sender === 'bot' ? 'bot-avatar' : 'user-avatar');
+      avatar.textContent = sender === 'bot' ? 'AI' : 'U';
+
       const msg = document.createElement('div');
       msg.classList.add('message', sender);
       msg.textContent = text;
-      messagesDiv.appendChild(msg);
+
+      const time = document.createElement('span');
+      time.classList.add('timestamp');
+      const now = new Date();
+      time.textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      msg.appendChild(time);
+
+      if (sender === 'user') {
+        row.appendChild(msg);
+        row.appendChild(avatar);
+        sendSound.play();
+      } else {
+        row.appendChild(avatar);
+        row.appendChild(msg);
+        receiveSound.play();
+      }
+
+      messagesDiv.appendChild(row);
+
+      if (messagesDiv.scrollTop + messagesDiv.clientHeight < messagesDiv.scrollHeight - 60) {
+        newAlert.style.display = "block";
+      } else {
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+    }
+
+    newAlert.onclick = () => {
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      newAlert.style.display = "none";
+    };
+
+    function showTyping() {
+      const row = document.createElement('div');
+      row.classList.add('message-row');
+      row.id = 'typing-indicator';
+
+      const avatar = document.createElement('div');
+      avatar.classList.add('avatar', 'bot-avatar');
+      avatar.textContent = 'AI';
+
+      const typingDiv = document.createElement('div');
+      typingDiv.classList.add('message');
+      typingDiv.innerHTML = '...';
+
+      row.appendChild(avatar);
+      row.appendChild(typingDiv);
+
+      messagesDiv.appendChild(row);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function removeTyping() {
+      const typingDiv = document.getElementById('typing-indicator');
+      if (typingDiv) typingDiv.remove();
     }
 
     async function sendMessage() {
@@ -92,8 +334,9 @@
       appendMessage(text, 'user');
       input.value = '';
 
+      showTyping();
+
       try {
-        // Call n8n webhook directly
         const res = await fetch(
           'https://n8n-byoqnxdr.us-east-1.clawcloudrun.com/webhook-test/559a0cd6-fd82-4cb7-85e8-f12ab4ee267e',
           {
@@ -104,31 +347,45 @@
         );
 
         const data = await res.json();
-        console.log('Raw n8n response:', data);
+        removeTyping();
 
         let reply;
         if (Array.isArray(data) && data.length > 0) {
-          reply =
-            data[0].body?.output ||
-            data[0].body?.reply ||
-            data[0].json?.output ||
-            data[0].json?.reply;
+          reply = data[0].body?.output || data[0].body?.reply;
         } else if (data.body) {
           reply = data.body.output || data.body.reply;
         } else {
           reply = data.output || data.reply;
         }
 
-        appendMessage(reply || 'No response from AI', 'bot');
+        const delay = Math.min(2000, 500 + (reply?.length || 20) * 20);
+        setTimeout(() => {
+          appendMessage(reply || 'No response from AI', 'bot');
+        }, delay);
       } catch (err) {
+        removeTyping();
         appendMessage('Error: Could not reach AI server', 'bot');
       }
     }
 
     sendBtn.addEventListener('click', sendMessage);
     input.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') sendMessage();
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendMessage();
+      }
     });
+
+    toggleBtn.addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+      toggleBtn.textContent = document.body.classList.contains('dark') ? "☀️" : "🌙";
+    });
+
+    window.onload = () => {
+      setTimeout(() => {
+        appendMessage("Hello 👋 I’m your Lawyer AI Assistant. How can I help you today?", "bot");
+      }, 800);
+    };
   </script>
 </body>
 </html>
